@@ -1,0 +1,7 @@
+Django>=3.2,<4.0
+djangorestframework>=3.14,<4.0
+python-decouple>=3.8,<4.0
+django-cors-headers>=3.10,<4.0
+gunicorn>=20.0,<21.0
+# psycopg2-binary solo es necesario en producción con PostgreSQL
+# Para local usaremos SQLite (incluido en Python)
