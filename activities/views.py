@@ -1,47 +1,27 @@
-from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import APIException, NotFound
+from rest_framework.exceptions import NotFound
 
 from .models import Activity, Subtask
 from .serializers import ActivityListSerializer, ActivityDetailSerializer, SubtaskSerializer
 
-User = get_user_model()
-
-
-class ServiceUnavailable(APIException):
-    status_code = 503
-    default_code = 'service_unavailable'
-
-
-def get_demo_user():
-    """Retorna el usuario demo. Lanza 503 si no existe (ejecutar seed_data)."""
-    try:
-        return User.objects.get(username='demo')
-    except User.DoesNotExist:
-        raise ServiceUnavailable(
-            detail="Usuario demo no disponible. Ejecute: python manage.py seed_data"
-        )
-
 
 class ActivityListCreateView(APIView):
     """
-    GET  /api/activities/   Lista actividades del usuario demo.
+    GET  /api/activities/   Lista actividades del usuario autenticado.
     POST /api/activities/   Crea una nueva actividad.
     """
 
     def get(self, request):
-        user = get_demo_user()
-        activities = Activity.objects.filter(user=user)
+        activities = Activity.objects.filter(user=request.user)
         serializer = ActivityListSerializer(activities, many=True)
         return Response({'count': len(serializer.data), 'results': serializer.data})
 
     def post(self, request):
-        user = get_demo_user()
         serializer = ActivityDetailSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=user)
+            serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -53,19 +33,18 @@ class ActivityDetailView(APIView):
     DELETE /api/activities/{id}/   Elimina actividad y subtareas (CASCADE).
     """
 
-    def get_object(self, pk):
-        user = get_demo_user()
+    def get_object(self, pk, user):
         try:
             return Activity.objects.get(pk=pk, user=user)
         except Activity.DoesNotExist:
             raise NotFound()
 
     def get(self, request, pk):
-        activity = self.get_object(pk)
+        activity = self.get_object(pk, request.user)
         return Response(ActivityDetailSerializer(activity).data)
 
     def patch(self, request, pk):
-        activity = self.get_object(pk)
+        activity = self.get_object(pk, request.user)
         serializer = ActivityDetailSerializer(activity, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -73,7 +52,7 @@ class ActivityDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        activity = self.get_object(pk)
+        activity = self.get_object(pk, request.user)
         activity.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -83,15 +62,14 @@ class SubtaskListCreateView(APIView):
     POST /api/activities/{id}/subtasks/   Crea subtarea para una actividad.
     """
 
-    def get_activity(self, pk):
-        user = get_demo_user()
+    def get_activity(self, pk, user):
         try:
             return Activity.objects.get(pk=pk, user=user)
         except Activity.DoesNotExist:
             raise NotFound()
 
     def post(self, request, pk):
-        activity = self.get_activity(pk)
+        activity = self.get_activity(pk, request.user)
         serializer = SubtaskSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(activity=activity)
@@ -105,8 +83,7 @@ class SubtaskDetailView(APIView):
     DELETE /api/activities/{id}/subtasks/{subtask_id}/   Elimina subtarea.
     """
 
-    def get_object(self, pk, subtask_id):
-        user = get_demo_user()
+    def get_object(self, pk, subtask_id, user):
         try:
             activity = Activity.objects.get(pk=pk, user=user)
         except Activity.DoesNotExist:
@@ -117,7 +94,7 @@ class SubtaskDetailView(APIView):
             raise NotFound()
 
     def patch(self, request, pk, subtask_id):
-        subtask = self.get_object(pk, subtask_id)
+        subtask = self.get_object(pk, subtask_id, request.user)
         serializer = SubtaskSerializer(subtask, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -125,6 +102,6 @@ class SubtaskDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, subtask_id):
-        subtask = self.get_object(pk, subtask_id)
+        subtask = self.get_object(pk, subtask_id, request.user)
         subtask.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
