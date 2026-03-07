@@ -6,15 +6,19 @@ pip install -r requirements.txt
 
 python manage.py collectstatic --no-input
 python manage.py migrate
-python manage.py seed_data
 python manage.py shell -c "
-from core.models import User
-for username, password in [('demo','demo123'),('test','test123'),('student','study2024')]:
-    try:
-        u = User.objects.get(username=username)
-        u.set_password(password)
-        u.save()
-        print('Password reset:', username)
-    except User.DoesNotExist:
-        print('User not found:', username)
+from core.models import User, UserCapacity
+users = [
+    ('demo',    'demo123',    'demo@example.com'),
+    ('test',    'test123',    'test@example.com'),
+    ('student', 'study2024',  'student@studyplan.com'),
+]
+for username, password, email in users:
+    u, created = User.objects.get_or_create(username=username)
+    u.email = email
+    u.set_password(password)
+    u.save()
+    UserCapacity.objects.get_or_create(user=u, defaults={'daily_limit': 6})
+    print(('Created' if created else 'Updated') + ': ' + username)
+print('Done')
 "
