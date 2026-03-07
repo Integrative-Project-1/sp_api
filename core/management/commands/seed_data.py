@@ -21,16 +21,10 @@ class Command(BaseCommand):
             }
         )
 
-        if demo_created:
-            demo_user.set_password('demo123')
-            demo_user.save()
-            self.stdout.write(
-                self.style.SUCCESS(f'✓ Created user: {demo_user.username}')
-            )
-        else:
-            self.stdout.write(
-                self.style.WARNING(f'⊘ User already exists: {demo_user.username}')
-            )
+        demo_user.set_password('demo123')
+        demo_user.save()
+        action = 'Created' if demo_created else 'Updated'
+        self.stdout.write(self.style.SUCCESS(f'+ {action} user: {demo_user.username}'))
 
         # Ensure demo user has capacity
         demo_capacity, demo_cap_created = UserCapacity.objects.get_or_create(
@@ -53,16 +47,10 @@ class Command(BaseCommand):
             }
         )
 
-        if test_created:
-            test_user.set_password('test123')
-            test_user.save()
-            self.stdout.write(
-                self.style.SUCCESS(f'✓ Created user: {test_user.username}')
-            )
-        else:
-            self.stdout.write(
-                self.style.WARNING(f'⊘ User already exists: {test_user.username}')
-            )
+        test_user.set_password('test123')
+        test_user.save()
+        action = 'Created' if test_created else 'Updated'
+        self.stdout.write(self.style.SUCCESS(f'+ {action} user: {test_user.username}'))
 
         # Ensure test user has capacity
         test_capacity, test_cap_created = UserCapacity.objects.get_or_create(
@@ -75,9 +63,26 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f'✓ Created capacity for {test_user.username}: {test_capacity.daily_limit}h')
             )
 
-        self.stdout.write(self.style.SUCCESS('✓ Seed data completed!'))
-        self.stdout.write(
-            self.style.WARNING('\nMock Users Created:')
+        # User 3: student
+        student_user, student_created = User.objects.get_or_create(
+            username='student',
+            defaults={
+                'email': 'student@studyplan.com',
+                'first_name': 'Study',
+                'last_name': 'Student',
+            }
         )
-        self.stdout.write('  - demo / demo123 (6h capacity)')
-        self.stdout.write('  - test / test123 (8h capacity)')
+        student_user.set_password('study2024')
+        student_user.save()
+        action = 'Created' if student_created else 'Updated'
+        self.stdout.write(self.style.SUCCESS(f'+ {action} user: {student_user.username}'))
+
+        UserCapacity.objects.get_or_create(
+            user=student_user,
+            defaults={'daily_limit': 6}
+        )
+
+        self.stdout.write(self.style.SUCCESS('+ Seed data completed!'))
+        self.stdout.write('  - demo / demo123')
+        self.stdout.write('  - test / test123')
+        self.stdout.write('  - student / study2024')
