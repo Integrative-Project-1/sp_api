@@ -9,8 +9,41 @@ from .serializers import (
     UserSerializer,
     UserDetailSerializer,
     LoginSerializer,
+    RegisterSerializer,
     UserCapacitySerializer,
 )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_view(request):
+    """
+    POST /api/auth/register/
+
+    Crea un nuevo usuario. Retorna user data y JWT token.
+
+    Request:
+        {"username": "nuevo", "email": "nuevo@example.com", "password": "pass123"}
+
+    Response 201:
+        {"user": {...}, "token": "...", "refresh": "..."}
+
+    Response 400:
+        {"username": ["Este nombre de usuario ya está en uso."]}
+    """
+    serializer = RegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'user': UserDetailSerializer(user).data,
+                'token': str(refresh.access_token),
+                'refresh': str(refresh),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
