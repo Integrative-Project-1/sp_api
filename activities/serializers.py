@@ -14,8 +14,7 @@ class SubtaskSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'note',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'status', 'created_at', 'updated_at']
-        # status es read_only en Sprint 1 — los cambios de estado son US-09 (Sprint 4)
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class ActivityListSerializer(serializers.ModelSerializer):
