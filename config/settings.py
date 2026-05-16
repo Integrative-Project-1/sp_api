@@ -178,12 +178,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
 }
 
 # Spectacular/Swagger Configuration
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Study Planner API',
-    'DESCRIPTION': 'REST API para Study Planner - Gestión de Actividades y Capacidad Diaria',
+    'DESCRIPTION': (
+        'REST API para Study Planner. '
+        'Subtareas: estados pending | done | postponed; posponer (status+note) vs reprogramar (fecha/horas). '
+        'Progreso por actividad: subtasks_done, subtasks_total, progress_percent.'
+    ),
+    'TAGS': [
+        {'name': 'Actividades', 'description': 'CRUD de actividades y progreso por subtareas'},
+        {'name': 'Subtareas', 'description': 'Crear/actualizar subtareas (posponer, reprogramar, hecho)'},
+    ],
     'VERSION': '1.0.0',
     'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
     'SERVE_AUTHENTICATION': None,
